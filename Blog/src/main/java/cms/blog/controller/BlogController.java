@@ -95,25 +95,6 @@ public class BlogController {
         return "login";
     }
 
-    @PostMapping("/addTag")
-    public String addTag(HttpServletRequest request, Model model) {
-        String name = request.getParameter("tag");
-        int postId = Integer.parseInt(request.getParameter("postId"));
-        service.addTagForPost(name, postId);
-        Post post = service.getPostById(postId);
-        model.addAttribute("post", post);
-        return "redirect:/";
-    }
-
-    @GetMapping("/searchByTag/{tagId}")
-    public String searchByTag(@PathVariable("tagId") int tagId,
-                            Model model){
-        List<Post> posts = service.getPostsByTag(tagId, USER);
-        model.addAttribute("postResponse", posts);
-        return "blog/view_posts";
-    }
-    
-
     
     /*
     @RequestMapping("/")
@@ -136,7 +117,7 @@ public String displayPendingPost(Model model) throws AuthorizationException {
     List<Post> pending = service.getNotApprovedPosts(permission);
     model.addAttribute("posts", pending);
 
-    return "manager/pending";
+    return "blog/manager/pending";
 }
 
     @RequestMapping(value = "/manager/rejected", method = RequestMethod.GET)
@@ -145,7 +126,10 @@ public String displayPendingPost(Model model) throws AuthorizationException {
         List<RejectedPost> rejected = service.getRejectedPosts(permission);
         model.addAttribute("posts", rejected);
 
-        return "manager/rejected";
+        for(RejectedPost post : rejected) {
+            System.out.println(post.toString());
+        }
+        return "blog/manager/rejected";
     }
 
 
@@ -154,20 +138,24 @@ public String displayPendingPost(Model model) throws AuthorizationException {
         String title = request.getParameter("title");
         String content = request.getParameter("content");
         String shortDescription = request.getParameter("shortDescription");
+        String expDate = request.getParameter("expireDate");
+        String pubDate = request.getParameter("publishDate");
 
         Post post = new Post();
         post.setTitle(title);
         post.setPostContent(content);
         post.setDescription(shortDescription);
+        post.setPublishDate(service.parseDateInput(pubDate));
+        post.setExpireDate(service.parseDateInput(expDate));
         service.addPost(post, MANAGER);
 
 //        postDao.addPost(post);
-        return "redirect:/";
+        return "redirect:/manager/pending";
     }
 
     @GetMapping("/manager/create")
     public String displayCreationPage(Model model) {
-        return "manager/create";
+        return "blog/manager/create";
     }
 
     @RequestMapping(value = "manager/deletePost/{postId}", method = RequestMethod.GET)
@@ -175,7 +163,7 @@ public String displayPendingPost(Model model) throws AuthorizationException {
             Post post = service.getPostById(postId);
         service.deletePost(postId, MANAGER);
 
-        return "redirect:/";
+        return "redirect:/manager/pending";
     }
 
 
@@ -183,7 +171,7 @@ public String displayPendingPost(Model model) throws AuthorizationException {
     public String editPost(@PathVariable Integer postId, Model model) {
         Post post = postDao.getPostById(postId);
         model.addAttribute("post", post);
-        return "manager/editPost";
+        return "blog/manager/editPost";
     }
 
     @RequestMapping(value = "/manager/editPost/{postId}", method = RequestMethod.POST)
@@ -193,12 +181,14 @@ public String displayPendingPost(Model model) throws AuthorizationException {
         currentPost.setTitle(request.getParameter("title"));
         currentPost.setDescription(request.getParameter("shortDescription"));
         currentPost.setPostContent(request.getParameter("content"));
+        currentPost.setPublishDate(request.getParameter("publishDate"));
+        currentPost.setExpireDate(request.getParameter("expireDate"));
 
         service.editPost(currentPost, MANAGER);
 
         model.addAttribute("post", currentPost);
 
-        return "redirect:/";
+        return "redirect:/manager/pending";
     }
 
 
